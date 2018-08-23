@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="./js/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript" src="js/mqttws31.min.js"></script>
+
+</head>
+<body>
+<h1>mosquitto pub</h1>
+topic:<input type='text' id='topicsend' size="60"/> <br>
+text :<input type='text' id='textsend' size="60"/>
+<input type='button' value="send" id='btn' onclick="button_onclick()"/>
+</br>
+
+订阅主题 <input type="text" name="" id="dytopic"><button id="dy">订阅</button>
+<br>
+<div style="float: left;width: 50%;">
+    <h1 >信息列表</h1>
+    <input type='text' id='sub_count' disabled/>
+    <ul id='sub_message' ></ul>
+</div>
+<div style="float:right;">
+    <h1>订阅列表</h1>
+    <ul id='topiclist'>
+        <li>test</li>
+    </ul>
+</div>
+
+</body>
+
+</html>
+
+<script type="text/javascript">
+    var hostname = "192.168.1.107";      //主机IP  106.14.181.32
+    var hostPort = 61623;             //port
+    var sub_count = 0;
+    var client;
+    var topic = "test";
+
+    function MQTTconnect() {
+        client = new Paho.MQTT.Client(hostname, hostPort, "gg");
+        client.onMessageArrived = onMessageArrived;
+        client.connect({
+            userName: 'admin',
+            password: 'password',
+            onSuccess: onConnect
+        });
+        console.log("Host=" + hostname + ", port=" + hostPort);
+    };
+
+    // called when the client connects
+    function onConnect() {
+        console.log("onConnect succeeds");
+        client.subscribe(topic);    //订阅所有主题
+    }
+
+    // called when a message arrives
+    function onMessageArrived(message) {
+        var topic = message.destinationName;
+        var payload = message.payloadString;
+        console.log("onMessageArrived:" + payload);
+        sub_count++;
+        $('#sub_count').val('收到订阅' + sub_count + '条');
+        $('#sub_message').prepend('<li>' + topic + ' = ' + payload + '</li>');
+    }
+
+    function button_onclick() {
+        var topic = $('#topicsend').val();
+        var text = $('#textsend').val();
+        if (topic == '' || text == '') {
+            alert("noTopic or noText");
+            return;
+        }
+        var message = new Paho.MQTT.Message(text);
+        message.destinationName = topic;
+        message.qos = 0;
+        client.send(message);
+    };
+    $(document).ready(function () {
+        MQTTconnect();
+    });
+
+    $("#dy").click(function () {
+        $('#topiclist').prepend('<li>' + $("#dytopic").val() + '</li>');
+        client.subscribe($("#dytopic").val());    //订阅
+
+    });
+
+</script>
