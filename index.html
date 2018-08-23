@@ -14,17 +14,18 @@ text :<input type='text' id='textsend' size="60"/>
 <input type='button' value="send" id='btn' onclick="button_onclick()"/>
 </br>
 
-订阅主题 <input type="text" name="" id="dytopic"><button id="dy">订阅</button>
+订阅主题 <input type="text" name="" id="dytopic">
+<button id="dy">订阅</button>
+<button id="canceley">取消订阅</button>
 <br>
 <div style="float: left;width: 50%;">
-    <h1 >信息列表</h1>
+    <h1>信息列表</h1>
     <input type='text' id='sub_count' disabled/>
-    <ul id='sub_message' ></ul>
+    <ul id='sub_message'></ul>
 </div>
 <div style="float:right;">
     <h1>订阅列表</h1>
     <ul id='topiclist'>
-        <li>test</li>
     </ul>
 </div>
 
@@ -37,7 +38,7 @@ text :<input type='text' id='textsend' size="60"/>
     var hostPort = 61623;             //port
     var sub_count = 0;
     var client;
-    var topic = "test";
+    var topiclist = [];
 
     function MQTTconnect() {
         client = new Paho.MQTT.Client(hostname, hostPort, "gg");
@@ -53,14 +54,13 @@ text :<input type='text' id='textsend' size="60"/>
     // called when the client connects
     function onConnect() {
         console.log("onConnect succeeds");
-        client.subscribe(topic);    //订阅所有主题
+        // client.subscribe(topic);    //订阅所有主题
     }
 
     // called when a message arrives
     function onMessageArrived(message) {
         var topic = message.destinationName;
         var payload = message.payloadString;
-        console.log("onMessageArrived:" + payload);
         sub_count++;
         $('#sub_count').val('收到订阅' + sub_count + '条');
         $('#sub_message').prepend('<li>' + topic + ' = ' + payload + '</li>');
@@ -83,8 +83,35 @@ text :<input type='text' id='textsend' size="60"/>
     });
 
     $("#dy").click(function () {
-        $('#topiclist').prepend('<li>' + $("#dytopic").val() + '</li>');
-        client.subscribe($("#dytopic").val());    //订阅
+        var t = $("#dytopic").val();
+        var i = topiclist.indexOf(t);
+        if (i !== -1) {
+            alert("该订阅已存在");
+            return;
+        }
+        topiclist.unshift(t);
+        $('#topiclist').prepend('<li>' + t + '</li>');
+        client.subscribe(t);    //订阅
+
+    });
+    $("#canceley").click(function () {
+        // $('#topiclist').prepend('<li>' + $("#dytopic").val() + '</li>');
+        var q = $("#dytopic").val();
+        client.unsubscribe(q);    //订阅
+        var i = topiclist.indexOf(q);
+        if (i === -1) {
+            alert("不存在该订阅");
+            return;
+        }
+        console.log(topiclist);
+        topiclist.splice(i, 1);
+        console.log(topiclist);
+        var dh = "";
+        for (var j = 0; j < topiclist.length; j++) {
+            dh += "<li>" + topiclist[j] + "</li>";
+        }
+        $('#topiclist').html(dh);
+
 
     });
 
